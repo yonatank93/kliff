@@ -63,6 +63,9 @@ if ptemcee_avail:
         logprior_args=(prior_bounds,),
         random=np.random.RandomState(seed),
     )
+    # ptsampler = MCMC(
+    #     loss, ntemps=ntemps, nwalkers=nwalkers, logprior_args=(prior_bounds,)
+    # )
 if emcee_avail:
     sampler = MCMC(
         loss, nwalkers=nwalkers, logprior_args=(prior_bounds,), sampler="emcee"
@@ -105,14 +108,16 @@ def test_T0():
 @pytest.mark.skipif(not ptemcee_avail, reason="ptemcee is not found")
 def test_MCMC_wrapper1():
     """Test if the MCMC wrapper class returns the correct sampler instance."""
-    assert (
-        type(ptsampler) == PtemceeSampler
+    assert isinstance(
+        ptsampler, PtemceeSampler
     ), "MCMC should return ``PtemceeSampler`` instance"
 
 
 @pytest.mark.skipif(not emcee_avail, reason="emcee is not found")
 def test_MCMC_wrapper2():
-    assert type(sampler) == EmceeSampler, "MCMC should return ``EmceeSampler`` instance"
+    assert isinstance(
+        sampler, EmceeSampler
+    ), "MCMC should return ``EmceeSampler`` instance"
 
 
 @pytest.mark.skipif(not ptemcee_avail, reason="ptemcee is not found")
@@ -131,6 +136,14 @@ def test_dimensionality1():
         nsteps,
         ndim,
     ), "Dimensionality from the ptemcee wrapper is not right"
+    # chain = ptsampler.chain(p0, random=np.random.RandomState(seed), thin_by=nsteps)
+    # chain.run(nsteps)
+    # assert chain.x.shape == (
+    #     nsteps,
+    #     ntemps,
+    #     nwalkers,
+    #     ndim,
+    # ), "Dimensionality from the ptemcee wrapper is not right"
 
 
 @pytest.mark.skipif(not emcee_avail, reason="emcee is not found")
@@ -150,14 +163,16 @@ def test_pool_exception():
     """Test if an exception is raised when declaring the pool prior to instantiating
     ``kliff.uq.MCMC``.
     """
+    p = Pool(1)
     with pytest.raises(ValueError):
         _ = MCMC(
             loss,
             ntemps=ntemps,
             nwalkers=nwalkers,
             logprior_args=(prior_bounds,),
-            pool=Pool(1),
+            pool=p,
         )
+    p.close()
 
 
 def test_sampler_exception():

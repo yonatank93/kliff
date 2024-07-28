@@ -219,6 +219,15 @@ if ptemcee_avail:
                 betas=betas,
                 **kwargs,
             )
+            # super().__init__(
+            #     nwalkers,
+            #     ndim,
+            #     loglikelihood_fn,
+            #     logprior_fn,
+            #     logp_args=logprior_args,
+            #     betas=betas,
+            #     **kwargs,
+            # )
 
         def _generate_temp_ladder(self, ntemps, Tmax_ratio, Tladder):
             """Generate temperature ladder"""
