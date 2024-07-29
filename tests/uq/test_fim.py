@@ -71,7 +71,7 @@ def test_FIM_value():
 
     assert np.allclose(
         fim_array2 / fim_array1, target_ratio
-    ), "FIM calculation doesn;t pass the value check"
+    ), "FIM calculation doesn't pass the value check"
 
 
 def test_FIM_weights():
@@ -94,4 +94,20 @@ def test_FIM_weights():
     fim_array3 = fim_class3.run(params1)
 
     # The element-wise ratio of fim3/fim1 should be scale^2
-    assert np.allclose(fim_array3 / fim_array1, scale3**2)
+    assert np.allclose(
+        fim_array3 / fim_array1, scale3**2
+    ), "FIM calculation doesn't handle weights correctly"
+
+
+def test_FIM_parallel():
+    """Test parallelization of FIM calculation.
+
+    We only test if the parallelization works, i.e., not throwing an error, and if the
+    result is the same as if we do serial calculation.
+    """
+    # Parallel FIM calculation
+    fim_class4 = FIM(loss, nprocs=2)
+    fim_array4 = fim_class4.run(params1)
+
+    # Compare
+    assert np.all(fim_array4 == fim_array4), "FIM parallel calculation is broken"

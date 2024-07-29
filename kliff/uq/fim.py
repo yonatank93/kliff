@@ -3,6 +3,8 @@ import copy
 import numpy as np
 from loguru import logger
 
+from kliff import parallel
+
 try:
     import numdifftools as nd
 except ImportError as e:
@@ -69,7 +71,7 @@ class FIM:
 
     def _compute_jacobian_one_config(self, params, ca):
         """
-        Compute the Jacobian of forces w.r.t. parameters for one configuration.
+        Compute the Jacobian of the residual w.r.t. parameters for one configuration.
 
         Parameters
         ----------
@@ -88,6 +90,21 @@ class FIM:
         self.calculator.update_model_params(params)
 
         return j
+
+    def _compute_fim_one_config(self, params, ca):
+        """
+        Compute the FIM for one configuration.
+
+        Parameters
+        ----------
+        params: list
+          the parameter values
+
+        ca: object
+            `compute argument` associated with one configuration.
+        """
+        J = self._compute_jacobian_one_config(params, ca)
+        return J.T @ J
 
     def run(self, params=None):
         """
@@ -109,15 +126,27 @@ class FIM:
         if params is None:
             params = self.calculator.get_opt_params()
 
-        fim_all = []
-
         cas = self.calculator.get_compute_arguments()
-        for i, ca in enumerate(cas):
-            if i % 100 == 0:
-                logger.info(f"Processing configuration {i}.")
 
-            dfdp = self._compute_jacobian_one_config(params, ca)
-            fim_all.append(np.dot(dfdp.T, dfdp))
+        if self.nprocs > 1:
+
+            def fim_wrapper(ca, params):
+                # Swap the order of parameters
+                return self._compute_fim_one_config(params, ca)
+
+            fim_all = parallel.parmap2(
+                fim_wrapper,
+                cas,
+                params,
+                nprocs=self.nprocs,
+                tuple_X=False,
+            )
+            fim_all = np.array(fim_all)
+        else:
+            fim_all = []
+            for ca in cas:
+                fim_one_config = self._compute_fim_one_config(params, ca)
+                fim_all.append(fim_one_config)
 
         fim = np.sum(fim_all, axis=0)
         logger.info("Finish computing Fisher information matrix.")
