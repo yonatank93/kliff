@@ -105,14 +105,16 @@ def test_T0():
 @pytest.mark.skipif(not ptemcee_avail, reason="ptemcee is not found")
 def test_MCMC_wrapper1():
     """Test if the MCMC wrapper class returns the correct sampler instance."""
-    assert (
-        type(ptsampler) == PtemceeSampler
+    assert isinstance(
+        ptsampler, PtemceeSampler
     ), "MCMC should return ``PtemceeSampler`` instance"
 
 
 @pytest.mark.skipif(not emcee_avail, reason="emcee is not found")
 def test_MCMC_wrapper2():
-    assert type(sampler) == EmceeSampler, "MCMC should return ``EmceeSampler`` instance"
+    assert isinstance(
+        sampler, EmceeSampler
+    ), "MCMC should return ``EmceeSampler`` instance"
 
 
 @pytest.mark.skipif(not ptemcee_avail, reason="ptemcee is not found")
@@ -150,14 +152,16 @@ def test_pool_exception():
     """Test if an exception is raised when declaring the pool prior to instantiating
     ``kliff.uq.MCMC``.
     """
+    p = Pool(1)
     with pytest.raises(ValueError):
         _ = MCMC(
             loss,
             ntemps=ntemps,
             nwalkers=nwalkers,
             logprior_args=(prior_bounds,),
-            pool=Pool(1),
+            pool=p,
         )
+    p.close()
 
 
 def test_sampler_exception():
